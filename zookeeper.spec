@@ -1,5 +1,5 @@
 %define _noarch_libdir /usr/lib
-%define rel_ver 3.5.5
+%define rel_ver 3.7.0
 %define pkg_ver 3
 
 Summary: High-performance coordination service for distributed applications.
@@ -10,13 +10,19 @@ License: Apache License v2.0
 Group: Applications/Databases
 URL: https://www.apache.org/dist/zookeeper/
 BuildArch: noarch
-Source0: https://www.apache.org/dist/zookeeper/zookeeper-%{rel_ver}/apache-zookeeper-%{rel_ver}.tar.gz
+#Source0: https://www.apache.org/dist/zookeeper/zookeeper-%{rel_ver}/apache-zookeeper-%{rel_ver}.tar.gz
+Source0: http://binrepo.linecorp.com/organizations/LINE-LAD/zookeeper/apache-zookeeper-%{rel_ver}-bin.tar.gz
 Source1: zookeeper.service
 Source2: zoo.cfg
 Source3: log4j.properties
 Source4: zookeeper.sysconfig
+Source5: zookeeper-client
+Source6: zookeeper-server
+Source7: zookeeper-server-cleanup
+Source8: zookeeper-server-initialize
+Source9: bigtop-detect-javahome
 BuildRoot: %{_tmppath}/%{name}-%{rel_ver}-%{release}-root
-BuildRequires: python-devel,gcc,make,libtool,autoconf,cppunit-devel,maven,hostname,systemd
+BuildRequires: python-devel,gcc,make,libtool,autoconf,hostname,systemd
 Requires: java,nc,systemd
 AutoReqProv: no
 
@@ -38,24 +44,29 @@ implementing coordination services from scratch.
 %define _maindir %{buildroot}%{_zookeeper_noarch_libdir}
 
 %prep
-%setup -q -n apache-zookeeper-%{rel_ver}
+%setup -q -n apache-zookeeper-%{rel_ver}-bin
 
 %build
-mvn -DskipTests package
+# mvn -DskipTests package
 
 %install
 rm -rf %{buildroot}
 install -p -d %{buildroot}%{_zookeeper_noarch_libdir}
 cp -a bin %{buildroot}%{_zookeeper_noarch_libdir}
 
-mkdir -p %{buildroot}%{_sysconfdir}/zookeeper
-cp -a zookeeper-server/target/lib %{buildroot}%{_zookeeper_noarch_libdir}
-install -p -D -m 644 zookeeper-server/target/zookeeper-%{rel_ver}.jar %{buildroot}%{_zookeeper_noarch_libdir}/lib/zookeeper-%{rel_ver}.jar
+mkdir -p %{buildroot}%{_sysconfdir}/zookeeper/conf.dist
+cp -a lib %{buildroot}%{_zookeeper_noarch_libdir}
+cp -a conf/* %{buildroot}%{_sysconfdir}/zookeeper/conf.dist
 install -p -D -m 644 %{S:1} %{buildroot}%{_unitdir}/%{name}.service
-install -p -D -m 644 %{S:2} %{buildroot}%{_sysconfdir}/zookeeper/zoo.cfg
-install -p -D -m 644 %{S:3} %{buildroot}%{_sysconfdir}/zookeeper/log4j.properties
+install -p -D -m 644 %{S:2} %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/zoo.cfg
+install -p -D -m 644 %{S:3} %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/log4j.properties
 install -p -D -m 644 %{S:4} %{buildroot}%{_sysconfdir}/sysconfig/zookeeper
-install -p -D -m 644 conf/configuration.xsl %{buildroot}%{_sysconfdir}/zookeeper/configuration.xsl
+install -p -D -m 755 %{S:5} %{buildroot}%{_bindir}/zookeeper-client
+install -p -D -m 755 %{S:6} %{buildroot}%{_bindir}/zookeeper-server
+install -p -D -m 755 %{S:7} %{buildroot}%{_bindir}/zookeeper-server-cleanup
+install -p -D -m 755 %{S:8} %{buildroot}%{_bindir}/zookeeper-server-initialize
+install -p -D -m 755 %{S:9} %{buildroot}%{_zookeeper_noarch_libdir}/bigtop-detect-javahome
+install -p -D -m 644 conf/configuration.xsl %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/configuration.xsl
 install -d %{buildroot}%{_sbindir}
 install -d %{buildroot}%{_bindir}
 install -d %{buildroot}%{_localstatedir}/log/zookeeper
@@ -69,16 +80,18 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc LICENSE.txt NOTICE.txt README.md
-%doc zookeeper-docs zookeeper-recipes
+%doc docs
 %dir %attr(0750, zookeeper, zookeeper) %{_localstatedir}/lib/zookeeper
 %dir %attr(0750, zookeeper, zookeeper) %{_localstatedir}/lib/zookeeper/data
 %dir %attr(0750, zookeeper, zookeeper) %{_localstatedir}/log/zookeeper
 %{_zookeeper_noarch_libdir}
 %{_unitdir}/%{name}.service
-%config(noreplace) %{_sysconfdir}/zookeeper
+%config(noreplace) %{_sysconfdir}/zookeeper/conf.dist
 %config(noreplace) %{_sysconfdir}/sysconfig/zookeeper
+%config(noreplace) %{_bindir}
 
 %pre
+alternatives --install /etc/zookeeper/conf zookeeper-conf /etc/zookeeper/conf.dist 20
 getent group zookeeper >/dev/null || groupadd -r zookeeper
 getent passwd zookeeper >/dev/null || useradd -r -g zookeeper -d / -s /sbin/nologin zookeeper
 exit 0
