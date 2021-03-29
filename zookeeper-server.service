@@ -4,29 +4,35 @@ Documentation=http://zookeeper.apache.org
 Requires=network.target remote-fs.target
 After=network.target remote-fs.target
 
+[Install]
+WantedBy=multi-user.target
+
+[Unit]
+Description=Apache Zookeeper
+After=network.target
+
 [Service]
 Type=forking
-SyslogIdentifier=zookeeper
-EnvironmentFile=-/etc/sysconfig/zookeeper
 User=zookeeper
 Group=zookeeper
+SyslogIdentifier=zookeeper
 Restart=always
 RestartSec=1s
+# Other directives omitted
+# (file size)
 LimitFSIZE=infinity
+# (cpu time)
 LimitCPU=infinity
+# (virtual memory size)
 LimitAS=infinity
+# (locked-in-memory size)
 LimitMEMLOCK=infinity
+# (open files)
 LimitNOFILE=365536
+# (processes/threads)
 LimitNPROC=365536
-Environment=JAVA_HOME=/usr/java/default
+Environment=JAVA_HOME=/usr/java/jdk11
 ExecStart=/bin/zookeeper-server start
 ExecStop=/bin/zookeeper-server stop
 ExecReload=/bin/zookeeper-server restart
-StandardOutput=journal
-StandardError=journal
-SuccessExitStatus=130
-KillSignal=SIGINT
-ProtectSystem=full
 
-[Install]
-WantedBy=multi-user.target
