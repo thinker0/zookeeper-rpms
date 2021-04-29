@@ -31,8 +31,8 @@ LimitMEMLOCK=infinity
 LimitNOFILE=365536
 # (processes/threads)
 LimitNPROC=365536
-Environment=JAVA_HOME=/usr/java/jdk11
-ExecStart=/bin/zookeeper-server start
-ExecStop=/bin/zookeeper-server stop
-ExecReload=/bin/zookeeper-server restart
+Environment=JAVA_HOME=/usr/java/default
+ExecStart=/bin/zk-server start
+ExecStop=/bin/zk-server stop
+ExecReload=/bin/zk-server restart
 

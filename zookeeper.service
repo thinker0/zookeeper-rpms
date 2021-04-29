@@ -19,9 +19,9 @@ LimitMEMLOCK=infinity
 LimitNOFILE=365536
 LimitNPROC=365536
 Environment=JAVA_HOME=/usr/java/default
-ExecStart=/bin/zookeeper-server start
-ExecStop=/bin/zookeeper-server stop
-ExecReload=/bin/zookeeper-server restart
+ExecStart=/bin/zk-server start
+ExecStop=/bin/zk-server stop
+ExecReload=/bin/zk-server restart
 StandardOutput=journal
 StandardError=journal
 SuccessExitStatus=130

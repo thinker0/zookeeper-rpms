@@ -1,9 +1,9 @@
 %define _noarch_libdir /usr/lib
-%define rel_ver 3.7.0
+%define rel_ver 3.6.3
 %define pkg_ver 3
 
 Summary: High-performance coordination service for distributed applications.
-Name: zookeeper
+Name: zookeeper-server
 Version: %{rel_ver}
 Release: %{pkg_ver}%{?dist}
 License: Apache License v2.0
@@ -11,16 +11,17 @@ Group: Applications/Databases
 URL: https://www.apache.org/dist/zookeeper/
 BuildArch: noarch
 #Source0: https://www.apache.org/dist/zookeeper/zookeeper-%{rel_ver}/apache-zookeeper-%{rel_ver}.tar.gz
-Source0: http://binrepo.linecorp.com/organizations/LINE-LAD/zookeeper/apache-zookeeper-%{rel_ver}-bin.tar.gz
-Source1: zookeeper.service
+Source0: https://mirror.navercorp.com/apache/zookeeper/zookeeper-%{rel_ver}/apache-zookeeper-%{rel_ver}-bin.tar.gz
+Source1: zookeeper-server.service
 Source2: zoo.cfg
 Source3: log4j.properties
 Source4: zookeeper.sysconfig
-Source5: zookeeper-client
-Source6: zookeeper-server
-Source7: zookeeper-server-cleanup
-Source8: zookeeper-server-initialize
+Source5: zk-server-client
+Source6: zk-server
+Source7: zk-server-cleanup
+Source8: zk-server-initialize
 Source9: bigtop-detect-javahome
+Source10: zoo_sample.cfg
 BuildRoot: %{_tmppath}/%{name}-%{rel_ver}-%{release}-root
 BuildRequires: python-devel,gcc,make,libtool,autoconf,hostname,systemd
 Requires: java,nc,systemd
@@ -40,7 +41,7 @@ prone to errors such as race conditions and deadlock. The motivation behind
 ZooKeeper is to relieve distributed applications the responsibility of
 implementing coordination services from scratch.
 
-%define _zookeeper_noarch_libdir %{_noarch_libdir}/zookeeper
+%define _zookeeper_noarch_libdir %{_noarch_libdir}/zookeeper-server
 %define _maindir %{buildroot}%{_zookeeper_noarch_libdir}
 
 %prep
@@ -54,19 +55,20 @@ rm -rf %{buildroot}
 install -p -d %{buildroot}%{_zookeeper_noarch_libdir}
 cp -a bin %{buildroot}%{_zookeeper_noarch_libdir}
 
-mkdir -p %{buildroot}%{_sysconfdir}/zookeeper/conf.dist
+mkdir -p %{buildroot}%{_sysconfdir}/zookeeper/conf.server
 cp -a lib %{buildroot}%{_zookeeper_noarch_libdir}
-cp -a conf/* %{buildroot}%{_sysconfdir}/zookeeper/conf.dist
+cp -a conf/* %{buildroot}%{_sysconfdir}/zookeeper/conf.server
 install -p -D -m 644 %{S:1} %{buildroot}%{_unitdir}/%{name}.service
-install -p -D -m 644 %{S:2} %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/zoo.cfg
-install -p -D -m 644 %{S:3} %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/log4j.properties
+install -p -D -m 644 %{S:2} %{buildroot}%{_sysconfdir}/zookeeper/conf.server/zoo.cfg
+install -p -D -m 644 %{S:3} %{buildroot}%{_sysconfdir}/zookeeper/conf.server/log4j.properties
 install -p -D -m 644 %{S:4} %{buildroot}%{_sysconfdir}/sysconfig/zookeeper
-install -p -D -m 755 %{S:5} %{buildroot}%{_bindir}/zookeeper-client
-install -p -D -m 755 %{S:6} %{buildroot}%{_bindir}/zookeeper-server
-install -p -D -m 755 %{S:7} %{buildroot}%{_bindir}/zookeeper-server-cleanup
-install -p -D -m 755 %{S:8} %{buildroot}%{_bindir}/zookeeper-server-initialize
+install -p -D -m 755 %{S:5} %{buildroot}%{_bindir}/zk-client
+install -p -D -m 755 %{S:6} %{buildroot}%{_bindir}/zk-server
+install -p -D -m 755 %{S:7} %{buildroot}%{_bindir}/zk-server-cleanup
+install -p -D -m 755 %{S:8} %{buildroot}%{_bindir}/zk-server-initialize
 install -p -D -m 755 %{S:9} %{buildroot}%{_zookeeper_noarch_libdir}/bigtop-detect-javahome
-install -p -D -m 644 conf/configuration.xsl %{buildroot}%{_sysconfdir}/zookeeper/conf.dist/configuration.xsl
+install -p -D -m 644 %{S:10} %{buildroot}%{_sysconfdir}/zookeeper/conf.server/zoo_sample.cfg
+install -p -D -m 644 conf/configuration.xsl %{buildroot}%{_sysconfdir}/zookeeper/conf.server/configuration.xsl
 install -d %{buildroot}%{_sbindir}
 install -d %{buildroot}%{_bindir}
 install -d %{buildroot}%{_localstatedir}/log/zookeeper
@@ -86,12 +88,13 @@ rm -rf %{buildroot}
 %dir %attr(0750, zookeeper, zookeeper) %{_localstatedir}/log/zookeeper
 %{_zookeeper_noarch_libdir}
 %{_unitdir}/%{name}.service
-%config(noreplace) %{_sysconfdir}/zookeeper/conf.dist
+%config(noreplace) %{_sysconfdir}/zookeeper/conf.server
 %config(noreplace) %{_sysconfdir}/sysconfig/zookeeper
-%config(noreplace) %{_bindir}
+#%config(noreplace) %{_bindir}
+%{_bindir}/zk*
 
 %pre
-alternatives --install /etc/zookeeper/conf zookeeper-conf /etc/zookeeper/conf.dist 20
+alternatives --install /etc/zookeeper/conf zookeeper-conf /etc/zookeeper/conf.server 20
 getent group zookeeper >/dev/null || groupadd -r zookeeper
 getent passwd zookeeper >/dev/null || useradd -r -g zookeeper -d / -s /sbin/nologin zookeeper
 exit 0
@@ -106,6 +109,8 @@ exit 0
 %systemd_postun_with_restart %{name}.service
 
 %changelog
+* Mon Apr 26 2021 se choi <thinker0@gmail.com> - 3.6.3-3
+- Dump version to 3.6.3
 * Fri Oct 04 2019 Tigran Mkrtchyan <tigran.mkrtchyan@desy.de> - 3.5.5-3
 - fix loading of systemd environment file
 - introduce variable to control package version

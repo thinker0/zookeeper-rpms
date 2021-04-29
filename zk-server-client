@@ -3,8 +3,8 @@
 # Autodetect JAVA_HOME if not defined
 . /usr/lib/zookeeper/bigtop-detect-javahome
 
-export ZOOKEEPER_HOME=${ZOOKEEPER_CONF:-/usr/lib/zookeeper}
+export ZOOKEEPER_HOME=${ZOOKEEPER_CONF:-/usr/lib/zookeeper-server}
 export ZOOKEEPER_CONF=${ZOOKEEPER_CONF:-/etc/zookeeper/conf}
 export CLASSPATH=$CLASSPATH:$ZOOKEEPER_CONF:$ZOOKEEPER_HOME/*:$ZOOKEEPER_HOME/lib/*
 export ZOOCFGDIR=${ZOOCFGDIR:-$ZOOKEEPER_CONF}
-env CLASSPATH=$CLASSPATH /usr/lib/zookeeper/bin/zkCli.sh "$@"
+env CLASSPATH=$CLASSPATH /usr/lib/zookeeper-server/bin/zkCli.sh "$@"
